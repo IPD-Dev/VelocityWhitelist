@@ -51,6 +51,10 @@ public class VWhitelistCommand {
                 .executes(this::list)
                 .build()
             )
+            .then(LiteralArgumentBuilder.<CommandSource>literal("reload")
+                .requires(s -> s.hasPermission("whitelist.command.reload"))
+                .executes(this::reload)
+                .build())
             .build();
     }
 
