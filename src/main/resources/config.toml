@@ -1,0 +1,6 @@
+[messages]
+unWhitelistedMessage = "<lang:multiplayer.disconnect.not_whitelisted>"
+
+[whitelist]
+enabled = false
+enforced = false
