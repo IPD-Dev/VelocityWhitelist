@@ -1,13 +1,12 @@
 package com.github.ipddev.velocitywhitelist.data;
 
 import com.github.ipddev.velocitywhitelist.Main;
-import com.github.ipddev.velocitywhitelist.ashcon.AshconQuerier;
-import com.github.ipddev.velocitywhitelist.ashcon.IncompleteAshconPlayer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.internal.LinkedTreeMap;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,10 +18,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.SneakyThrows;
 import net.kyori.adventure.text.Component;
+import org.enginehub.squirrelid.Profile;
+import org.enginehub.squirrelid.cache.SQLiteCache;
+import org.enginehub.squirrelid.resolver.CacheForwardingService;
+import org.enginehub.squirrelid.resolver.HttpRepositoryService;
 import org.slf4j.Logger;
 
 @Data
 public class Whitelist {
+	private final CacheForwardingService resolver;
+	private final SQLiteCache cache;
 	private static final Gson GSON = new GsonBuilder()
 		.setPrettyPrinting()
 		.disableHtmlEscaping()
@@ -35,12 +40,18 @@ public class Whitelist {
 
 	private final List<WhitelistedPlayer> players;
 
+	@SneakyThrows
 	public Whitelist(Main plugin) {
 		this.plugin = plugin;
 		this.logger = plugin.getLogger();
 		this.proxy = plugin.getProxy();
 		this.configuration = plugin.getConfiguration();
 		this.players = new ArrayList<>();
+
+		final File cache = plugin.getDataDirectory().resolve("cache.sqlite").toFile();
+
+		this.cache = new SQLiteCache(cache);
+		this.resolver = new CacheForwardingService(HttpRepositoryService.forMinecraft(), this.cache);
 
 		load();
 	}
@@ -188,9 +199,13 @@ public class Whitelist {
 		final Optional<Player> playerOptional = proxy.getPlayer(username);
 
 		if (playerOptional.isEmpty()) {
-			final IncompleteAshconPlayer ashconPlayer = AshconQuerier.query(username).get();
+			final Profile profile = resolver.findByName(username);
 
-			this.addPlayer(ashconPlayer.getUuid(), ashconPlayer.getUsername());
+			if (profile == null) {
+				return false;
+			}
+
+			this.addPlayer(profile.getUniqueId(), profile.getName());
 
 			return true;
 		}
@@ -207,9 +222,13 @@ public class Whitelist {
 		final Optional<Player> playerOptional = proxy.getPlayer(uuid);
 
 		if (playerOptional.isEmpty()) {
-			final IncompleteAshconPlayer ashconPlayer = AshconQuerier.query(uuid.toString()).get();
+			final Profile profile = resolver.findByUuid(uuid);
 
-			this.addPlayer(ashconPlayer.getUuid(), ashconPlayer.getUsername());
+			if (profile == null) {
+				return false;
+			}
+
+			this.addPlayer(uuid, profile.getName());
 
 			return true;
 		}
