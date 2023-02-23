@@ -214,3 +214,5 @@ gradle-app.setting
 .classpath
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,netbeans,intellij+all,gradle,eclipse
+
+run/

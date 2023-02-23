@@ -93,10 +93,8 @@ public class VWhitelistCommand {
             final boolean val;
             if (identifier.contains("-")) {
                 val = whitelist.addPlayer(UUID.fromString(identifier));
-
             } else {
                 val = whitelist.addPlayer(identifier);
-
             }
 
             if(!val) {
